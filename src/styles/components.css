@@ -1,0 +1,9 @@
+.page-shell {
+  width: min(100% - 2rem, 50rem);
+  margin: 0 auto;
+  padding: 4rem 0;
+}
+
+.privacy-note {
+  color: var(--color-muted);
+}
