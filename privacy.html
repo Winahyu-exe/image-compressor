@@ -3,16 +3,77 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Privacy information for Image Compressor." />
+    <meta
+      name="description"
+      content="Privacy information for Image Compressor, including local browser processing and analytics limits."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="/privacy.html" />
     <title>Privacy | Image Compressor</title>
   </head>
   <body>
-    <main class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="/image-compressor.html">Image Compressor</a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="/image-compressor.html">Tool</a>
+        <a href="/privacy.html" aria-current="page">Privacy</a>
+      </nav>
+    </header>
+
+    <main class="content-page">
       <h1>Privacy</h1>
-      <p>Image Compressor is designed to process images in your browser.</p>
-      <p>No image processing feature is available in this initial release.</p>
-      <a href="/image-compressor.html">Back to Image Compressor</a>
+      <p class="lede">
+        Image Compressor is a static browser utility. Image bytes stay on your device
+        and are not uploaded to our servers.
+      </p>
+
+      <section aria-labelledby="local-processing">
+        <h2 id="local-processing">Local processing</h2>
+        <p>
+          When you choose an image, it is read and compressed by browser APIs on this
+          device. There is no account, cloud history, backend image store, or server-side
+          image processing in the MVP.
+        </p>
+      </section>
+
+      <section aria-labelledby="analytics">
+        <h2 id="analytics">Analytics</h2>
+        <p>
+          Product analytics are not part of this phase. Future analytics must use
+          coarse, allowlisted events only and must not include file names, file bytes,
+          blob URLs, image hashes, EXIF data, or raw error messages.
+        </p>
+      </section>
+
+      <section aria-labelledby="browser-memory">
+        <h2 id="browser-memory">Browser memory and cache</h2>
+        <p>
+          Your browser controls memory, temporary blob storage, and cache behavior. The
+          service does not intentionally store your images, but the browser may manage
+          temporary local resources while the page is open.
+        </p>
+      </section>
+
+      <section aria-labelledby="network-data">
+        <h2 id="network-data">Normal site delivery</h2>
+        <p>
+          Loading the website can still create normal CDN or hosting logs, such as IP
+          address, user agent, path, and timestamp. Those delivery logs are separate
+          from image processing and should not contain your image file.
+        </p>
+      </section>
+
+      <p>
+        <a href="/image-compressor.html">Back to Image Compressor</a>
+      </p>
     </main>
+
+    <footer class="site-footer">
+      <a href="/image-compressor.html">Image Compressor</a>
+      <span aria-hidden="true">&middot;</span>
+      <span>Privacy-first static utility</span>
+    </footer>
+
     <script type="module" src="/src/privacy.js"></script>
   </body>
 </html>

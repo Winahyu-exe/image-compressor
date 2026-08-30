@@ -5,17 +5,287 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A private, browser-based image compression tool."
+      content="Compress JPEG, PNG, and WebP images in your browser. Private, simple, and built for files up to 20 MB."
     />
-    <title>Image Compressor</title>
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="/image-compressor.html" />
+    <meta property="og:title" content="Image Compressor" />
+    <meta
+      property="og:description"
+      content="A private browser-based image compressor for JPEG, PNG, and WebP files."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="/image-compressor.html" />
+    <meta name="twitter:card" content="summary" />
+    <title>Compress Images in Your Browser | Image Compressor</title>
   </head>
   <body>
-    <main class="page-shell">
-      <h1>Image Compressor</h1>
-      <p>A private image compression tool is being prepared.</p>
-      <p class="privacy-note">Images will be processed on this device.</p>
-      <a href="/privacy.html">Privacy</a>
+    <header class="site-header">
+      <a class="brand" href="/image-compressor.html" aria-label="Image Compressor home">
+        Image Compressor
+      </a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="/image-compressor.html" aria-current="page">Tool</a>
+        <a href="/privacy.html">Privacy</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero page-section" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <h1 id="page-title">Compress images in your browser</h1>
+          <p class="lede">
+            Choose one JPEG, PNG, or WebP image, adjust the quality, and download a
+            compressed copy. Your file stays on this device.
+          </p>
+          <p class="privacy-cue" id="privacy-note">
+            Your image is processed on this device and is not uploaded to our servers.
+          </p>
+        </div>
+
+        <section
+          class="tool-panel"
+          aria-labelledby="compressor-heading"
+          data-compressor-root
+          data-state="idle"
+        >
+          <div class="tool-panel__header">
+            <div>
+              <h2 id="compressor-heading">Image compressor</h2>
+              <p>Single-file workflow for JPEG, PNG, and WebP up to 20 MB.</p>
+            </div>
+            <p class="state-badge" data-state-badge>Idle</p>
+          </div>
+
+          <div class="status-line" role="status" aria-live="polite" data-status>
+            Waiting for an image.
+          </div>
+
+          <div
+            class="upload-zone"
+            data-drop-zone
+            aria-describedby="upload-help privacy-note"
+          >
+            <input
+              class="visually-hidden"
+              id="image-input"
+              data-file-input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+            />
+            <div class="upload-zone__content">
+              <p class="upload-zone__title">Drop an image here, or choose a file</p>
+              <p id="upload-help" class="upload-zone__help">
+                JPEG, PNG or WebP &middot; up to 20 MB &middot; processed on this device
+              </p>
+              <button class="button button--primary" type="button" data-choose-file>
+                Choose image
+              </button>
+            </div>
+          </div>
+
+          <div class="state-region" data-view="validating" hidden>
+            <p class="state-region__title">Checking image...</p>
+            <p>We are preparing the selected file for the next step.</p>
+          </div>
+
+          <div class="workspace-grid" data-view="ready" hidden>
+            <section class="preview-panel" aria-labelledby="preview-heading">
+              <h3 id="preview-heading">Selected image</h3>
+              <dl class="file-facts">
+                <div>
+                  <dt>Name</dt>
+                  <dd data-file-name>No file selected</dd>
+                </div>
+                <div>
+                  <dt>Size</dt>
+                  <dd data-file-size>Not available</dd>
+                </div>
+                <div>
+                  <dt>Dimensions</dt>
+                  <dd data-file-dimensions>Not available</dd>
+                </div>
+                <div>
+                  <dt>Format</dt>
+                  <dd data-file-format>Not available</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="settings-panel" aria-labelledby="settings-heading">
+              <h3 id="settings-heading">Compression settings</h3>
+              <fieldset class="preset-group">
+                <legend>Quality preset</legend>
+                <label>
+                  <input type="radio" name="quality-preset" value="smaller" />
+                  <span>Smaller</span>
+                  <small data-preset-help="smaller">Lower quality, smaller file.</small>
+                </label>
+                <label>
+                  <input type="radio" name="quality-preset" value="balanced" checked />
+                  <span>Balanced</span>
+                  <small data-preset-help="balanced">Recommended starting point.</small>
+                </label>
+                <label>
+                  <input type="radio" name="quality-preset" value="better" />
+                  <span>Better quality</span>
+                  <small data-preset-help="better">Less aggressive compression.</small>
+                </label>
+              </fieldset>
+
+              <details class="advanced-settings">
+                <summary>Advanced settings</summary>
+                <label class="field">
+                  <span>Output format</span>
+                  <select data-output-format>
+                    <option value="original">Keep original format</option>
+                    <option value="image/webp">WebP</option>
+                    <option value="image/jpeg">JPEG</option>
+                    <option value="image/png">PNG</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Quality</span>
+                  <input
+                    type="range"
+                    min="40"
+                    max="95"
+                    value="78"
+                    aria-describedby="quality-help"
+                  />
+                </label>
+                <p class="field-help" id="quality-help" data-quality-help>
+                  Quality affects JPEG and WebP output. PNG uses lossless re-encoding.
+                </p>
+              </details>
+
+              <div class="action-row">
+                <button class="button button--primary" type="button" data-compress disabled>
+                  Compress image
+                </button>
+                <button class="button button--secondary" type="button" data-reset>
+                  Choose another
+                </button>
+              </div>
+            </section>
+          </div>
+
+          <div class="state-region" data-view="processing" hidden>
+            <p class="state-region__title">Compressing image...</p>
+            <p>Processing this image in your browser. No upload is used.</p>
+            <button class="button button--secondary" type="button" data-reset-processing>
+              Cancel
+            </button>
+          </div>
+
+          <section class="result-panel" aria-labelledby="result-heading" data-view="success" hidden>
+            <h3 id="result-heading" data-result-heading>Result ready</h3>
+            <p class="result-note" data-result-note hidden></p>
+            <img
+              class="result-preview"
+              data-result-preview
+              alt="Compressed image preview"
+              hidden
+            />
+            <dl class="result-summary">
+              <div>
+                <dt>Filename</dt>
+                <dd data-result-name>Not available</dd>
+              </div>
+              <div>
+                <dt>Original size</dt>
+                <dd data-result-original-size>Not available</dd>
+              </div>
+              <div>
+                <dt>Compressed size</dt>
+                <dd data-result-output-size>Not available</dd>
+              </div>
+              <div>
+                <dt>Change</dt>
+                <dd data-result-change>Not available</dd>
+              </div>
+              <div>
+                <dt>Output format</dt>
+                <dd data-result-format>Not available</dd>
+              </div>
+              <div>
+                <dt>Output dimensions</dt>
+                <dd data-result-dimensions>Not available</dd>
+              </div>
+            </dl>
+            <div class="action-row">
+              <a class="button button--primary" data-download href="#" download>
+                Download image
+              </a>
+              <button class="button button--secondary" type="button" data-reset-success>
+                Compress another
+              </button>
+            </div>
+          </section>
+
+          <section class="error-panel" role="alert" data-view="error" hidden>
+            <h3 data-error-title>We couldn't read this image.</h3>
+            <p data-error-message>
+              Try another copy of the image or save it as JPEG, PNG, or WebP.
+            </p>
+            <div class="action-row">
+              <button class="button button--primary" type="button" data-retry>
+                Try again
+              </button>
+              <button class="button button--secondary" type="button" data-reset-error>
+                Choose another image
+              </button>
+            </div>
+          </section>
+        </section>
+      </section>
+
+      <section class="content-section" aria-labelledby="how-it-works">
+        <h2 id="how-it-works">How it works</h2>
+        <ol class="step-list">
+          <li>Choose one image from your device.</li>
+          <li>Pick a simple quality preset.</li>
+          <li>Compress and download the result from your browser.</li>
+        </ol>
+      </section>
+
+      <section class="content-section" aria-labelledby="formats-limits">
+        <h2 id="formats-limits">Formats and limits</h2>
+        <p>
+          JPEG, PNG, and WebP images up to 20 MB are supported. Animated images,
+          SVG, PDF, video, and batch processing are outside the MVP.
+        </p>
+      </section>
+
+      <section class="content-section" aria-labelledby="faq">
+        <h2 id="faq">FAQ</h2>
+        <details>
+          <summary>Will my image be uploaded?</summary>
+          <p>No. Image bytes stay in your browser for local processing.</p>
+        </details>
+        <details>
+          <summary>Can a compressed image be larger?</summary>
+          <p>
+            Yes. Some already-optimized files can become larger after re-encoding, so
+            the result will be reported honestly.
+          </p>
+        </details>
+        <details>
+          <summary>Does PNG quality work like JPEG quality?</summary>
+          <p>
+            Not usually. PNG is lossless in the browser canvas pipeline, so WebP may be
+            the better option when smaller output matters.
+          </p>
+        </details>
+      </section>
     </main>
+
+    <footer class="site-footer">
+      <a href="/privacy.html">Privacy</a>
+      <span aria-hidden="true">&middot;</span>
+      <span>Static browser utility</span>
+    </footer>
+
     <script type="module" src="/src/tools/image-compressor/index.js"></script>
   </body>
 </html>
