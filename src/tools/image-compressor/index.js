@@ -1,9 +1,15 @@
 import '../../styles/base.css';
 import '../../styles/components.css';
 
-import { getValidationMessage } from '../../shared/errors.js';
+import { ERROR_CODES, getValidationMessage } from '../../shared/errors.js';
 import { formatBytes } from '../../shared/format-bytes.js';
 import { createResourceManager } from '../../shared/resource-manager.js';
+import {
+  applyOutputFormatAvailability,
+  getOutputFormatAvailability,
+} from './browser-capabilities.js';
+import { selectSingleFile } from './file-selection.js';
+import { clearPreviewSource, setPreviewSource } from './preview-lifecycle.js';
 import { processImage } from './process-image.js';
 import { validateImage } from './validate-image.js';
 import { getResultPresentation } from './view.js';
@@ -19,6 +25,7 @@ const fileName = document.querySelector('[data-file-name]');
 const fileSize = document.querySelector('[data-file-size]');
 const fileDimensions = document.querySelector('[data-file-dimensions]');
 const fileFormat = document.querySelector('[data-file-format]');
+const originalPreview = document.querySelector('[data-original-preview]');
 const errorTitle = document.querySelector('[data-error-title]');
 const errorMessage = document.querySelector('[data-error-message]');
 const outputFormat = document.querySelector('[data-output-format]');
@@ -63,6 +70,7 @@ let selectedMetadata = null;
 let currentValidationId = 0;
 let currentProcessId = 0;
 const resources = createResourceManager();
+const encoderAvailability = getOutputFormatAvailability();
 
 function setState(nextState) {
   if (!root || !statusLine || !stateBadge) {
@@ -98,6 +106,10 @@ function clearFileFacts() {
   if (fileFormat) {
     fileFormat.textContent = 'Not available';
   }
+}
+
+function clearOriginalPreview() {
+  clearPreviewSource(originalPreview);
 }
 
 function clearResult() {
@@ -140,11 +152,16 @@ function presentValidationError(code, details) {
   setState('error');
 }
 
+function presentOriginalPreview(file) {
+  setPreviewSource(originalPreview, file, resources);
+}
+
 async function presentFile(file) {
   const validationId = currentValidationId + 1;
   currentValidationId = validationId;
   currentProcessId += 1;
   resources.cleanup();
+  clearOriginalPreview();
   clearResult();
   selectedFile = file;
   selectedMetadata = null;
@@ -160,6 +177,7 @@ async function presentFile(file) {
     selectedFile = null;
     selectedMetadata = null;
     clearFileFacts();
+    clearOriginalPreview();
     presentValidationError(result.code, result.details);
     return;
   }
@@ -184,6 +202,8 @@ async function presentFile(file) {
     fileFormat.textContent = metadata.mimeType.replace('image/', '').toUpperCase();
   }
 
+  presentOriginalPreview(file);
+  updateOutputFormatAvailability();
   updateFormatGuidance();
   setState('ready');
 }
@@ -192,6 +212,7 @@ function resetTool() {
   currentValidationId += 1;
   currentProcessId += 1;
   resources.cleanup();
+  clearOriginalPreview();
   clearResult();
   selectedFile = null;
   selectedMetadata = null;
@@ -255,6 +276,10 @@ function updateFormatGuidance() {
       ? 'For PNG, this app keeps the image lossless. The quality slider does not directly control PNG file size.'
       : 'Quality affects JPEG and WebP output. Lower values usually create smaller files.';
   }
+}
+
+function updateOutputFormatAvailability() {
+  applyOutputFormatAvailability(outputFormat, encoderAvailability, selectedMetadata?.mimeType || null);
 }
 
 function presentResultNote(result) {
@@ -332,7 +357,6 @@ async function compressSelectedImage() {
 
   const processId = currentProcessId + 1;
   currentProcessId = processId;
-  resources.cleanup();
   clearResult();
   setState('processing');
 
@@ -357,14 +381,17 @@ async function compressSelectedImage() {
   presentResult(result.result);
 }
 
-function handleFiles(files) {
-  const [file] = Array.from(files || []);
+function handleFiles(files, options = {}) {
+  const selection = selectSingleFile(files, options);
 
-  if (!file) {
+  if (!selection.ok) {
+    if (selection.code === ERROR_CODES.TOO_MANY_FILES) {
+      presentValidationError(selection.code);
+    }
     return;
   }
 
-  presentFile(file);
+  presentFile(selection.file);
 }
 
 if (chooseFileButton && fileInput) {
@@ -395,7 +422,7 @@ if (dropZone) {
 
   dropZone.addEventListener('drop', (event) => {
     event.preventDefault();
-    handleFiles(event.dataTransfer.files);
+    handleFiles(event.dataTransfer.files, { rejectMultiple: true });
   });
 }
 
@@ -431,6 +458,7 @@ document.querySelectorAll('[data-retry]').forEach((button) => {
   });
 });
 
+updateOutputFormatAvailability();
 setState('idle');
 updateFormatGuidance();
 

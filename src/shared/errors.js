@@ -1,5 +1,6 @@
 export const ERROR_CODES = Object.freeze({
   NO_FILE: 'NO_FILE',
+  TOO_MANY_FILES: 'TOO_MANY_FILES',
   EMPTY_FILE: 'EMPTY_FILE',
   UNSUPPORTED_TYPE: 'UNSUPPORTED_TYPE',
   MISMATCHED_TYPE: 'MISMATCHED_TYPE',
@@ -15,6 +16,10 @@ export const VALIDATION_MESSAGES = Object.freeze({
   [ERROR_CODES.NO_FILE]: {
     title: 'Choose an image to continue.',
     message: 'No file was selected. Choose one JPEG, PNG, or WebP image.',
+  },
+  [ERROR_CODES.TOO_MANY_FILES]: {
+    title: 'Choose one image at a time.',
+    message: 'This tool compresses one image per session. Drop one JPEG, PNG, or WebP image.',
   },
   [ERROR_CODES.EMPTY_FILE]: {
     title: 'This file is empty.',

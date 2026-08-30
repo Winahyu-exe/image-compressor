@@ -12,6 +12,27 @@ export const OUTPUT_EXTENSIONS = Object.freeze({
   'image/webp': 'webp',
 });
 
+export const MEMORY_GUARD = Object.freeze({
+  bytesPerPixel: 4,
+  // Source bitmap + destination canvas + encoder scratch space can coexist briefly.
+  overheadMultiplier: 3,
+  maxEstimatedBytes: 512 * 1024 * 1024,
+});
+
+export function estimateCanvasMemoryBytes(width, height) {
+  const pixels = Number(width) * Number(height);
+
+  if (!Number.isFinite(pixels) || pixels <= 0) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return pixels * MEMORY_GUARD.bytesPerPixel * MEMORY_GUARD.overheadMultiplier;
+}
+
+export function isCanvasMemorySafe(width, height) {
+  return estimateCanvasMemoryBytes(width, height) <= MEMORY_GUARD.maxEstimatedBytes;
+}
+
 function waitForIdleBoundary() {
   return new Promise((resolve) => {
     setTimeout(resolve, 0);
@@ -191,6 +212,18 @@ export async function processImage(validatedInput, settings = {}, apis = {}) {
     await waitForIdleBoundary();
     decoded = await decodeBitmap(file, apis);
     stage = 'draw';
+
+    if (!isCanvasMemorySafe(metadata.width, metadata.height)) {
+      return {
+        ok: false,
+        code: ERROR_CODES.OUT_OF_MEMORY,
+        details: {
+          estimatedBytes: estimateCanvasMemoryBytes(metadata.width, metadata.height),
+          maxEstimatedBytes: MEMORY_GUARD.maxEstimatedBytes,
+        },
+      };
+    }
+
     canvas = createCanvas(metadata.width, metadata.height, apis);
 
     const context = canvas.getContext?.('2d', { alpha: outputMimeType !== 'image/jpeg' });

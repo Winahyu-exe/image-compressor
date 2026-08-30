@@ -3,6 +3,9 @@ import { test } from 'node:test';
 
 import { ERROR_CODES } from '../../src/shared/errors.js';
 import {
+  estimateCanvasMemoryBytes,
+  isCanvasMemorySafe,
+  MEMORY_GUARD,
   QUALITY_PRESETS,
   processImage,
 } from '../../src/tools/image-compressor/process-image.js';
@@ -47,6 +50,7 @@ function createValidatedInput(format, overrides = {}) {
 function createProcessingApis(options = {}) {
   const calls = {
     bitmapClosed: 0,
+    canvasAllocated: 0,
     drawImage: 0,
     fillRect: 0,
     lastQuality: undefined,
@@ -74,6 +78,7 @@ function createProcessingApis(options = {}) {
   return {
     apis: {
       createCanvas: (width, height) => {
+        calls.canvasAllocated += 1;
         canvas.width = width;
         canvas.height = height;
         return canvas;
@@ -273,4 +278,43 @@ test('cleans up after failed canvas encoding exceptions', async () => {
   assert.equal(calls.bitmapClosed, 1);
   assert.equal(canvas.width, 0);
   assert.equal(canvas.height, 0);
+});
+
+test('estimates raw RGBA canvas memory with processing overhead', () => {
+  assert.equal(estimateCanvasMemoryBytes(10, 20), 10 * 20 * 4 * 3);
+  assert.equal(estimateCanvasMemoryBytes(0, 20), Number.POSITIVE_INFINITY);
+});
+
+test('allows memory estimates at the guard threshold', () => {
+  const widthAtThreshold = Math.floor(
+    MEMORY_GUARD.maxEstimatedBytes /
+      MEMORY_GUARD.bytesPerPixel /
+      MEMORY_GUARD.overheadMultiplier,
+  );
+
+  assert.equal(isCanvasMemorySafe(widthAtThreshold, 1), true);
+});
+
+test('rejects memory estimates over the guard threshold before canvas allocation', async () => {
+  const widthOverThreshold =
+    Math.floor(
+      MEMORY_GUARD.maxEstimatedBytes /
+        MEMORY_GUARD.bytesPerPixel /
+        MEMORY_GUARD.overheadMultiplier,
+    ) + 1;
+  const { apis, calls } = createProcessingApis();
+
+  const result = await processImage(
+    createValidatedInput('jpeg', {
+      height: 1,
+      width: widthOverThreshold,
+    }),
+    { preset: 'balanced' },
+    apis,
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, ERROR_CODES.OUT_OF_MEMORY);
+  assert.equal(calls.bitmapClosed, 1);
+  assert.equal(calls.canvasAllocated, 0);
 });
