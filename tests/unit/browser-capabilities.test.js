@@ -5,6 +5,7 @@ import {
   applyOutputFormatAvailability,
   detectCanvasEncoderSupport,
   getOutputFormatAvailability,
+  markOutputFormatUnavailable,
 } from '../../src/tools/image-compressor/browser-capabilities.js';
 
 function createCanvas(supportedTypes) {
@@ -89,4 +90,31 @@ test('marks keep-original unavailable when the selected input MIME cannot be enc
 
   assert.equal(options[0].disabled, true);
   assert.equal(select.value, 'image/png');
+});
+
+test('removes an encoder that becomes unavailable during processing and selects a safe fallback', () => {
+  const options = [
+    { disabled: false, hidden: false, value: 'original' },
+    { disabled: false, hidden: false, value: 'image/webp' },
+    { disabled: false, hidden: false, value: 'image/jpeg' },
+  ];
+  const select = createSelect(options, 'image/webp');
+  const availability = {
+    'image/jpeg': true,
+    'image/png': true,
+    'image/webp': true,
+  };
+
+  const unavailableMimeType = markOutputFormatUnavailable(
+    select,
+    availability,
+    'image/webp',
+    'image/jpeg',
+  );
+
+  assert.equal(unavailableMimeType, 'image/webp');
+  assert.equal(availability['image/webp'], false);
+  assert.equal(options[1].disabled, true);
+  assert.equal(options[1].hidden, true);
+  assert.equal(select.value, 'original');
 });
