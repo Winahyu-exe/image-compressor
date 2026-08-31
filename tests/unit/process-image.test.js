@@ -276,6 +276,21 @@ test('returns a safe error when encoding fails', async () => {
   assert.equal(canvas.height, 0);
 });
 
+test('rejects an encoder result whose verified MIME type differs from the requested output', async () => {
+  const { apis, calls, canvas } = createProcessingApis({ blobType: 'image/png' });
+  const result = await processImage(
+    createValidatedInput('jpeg'),
+    { outputFormat: 'image/webp', preset: 'balanced' },
+    apis,
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.code, ERROR_CODES.UNSUPPORTED_BROWSER);
+  assert.equal(calls.bitmapClosed, 1);
+  assert.equal(canvas.width, 0);
+  assert.equal(canvas.height, 0);
+});
+
 test('cleans up after failed canvas encoding exceptions', async () => {
   const { calls, canvas } = createProcessingApis();
   const result = await processImage(

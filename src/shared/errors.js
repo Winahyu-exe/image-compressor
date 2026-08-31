@@ -38,8 +38,8 @@ export const VALIDATION_MESSAGES = Object.freeze({
     message: 'Choose a smaller image before trying again.',
   },
   [ERROR_CODES.TOO_MANY_PIXELS]: {
-    title: "This image's dimensions are too large for this device.",
-    message: 'Resize it first or choose a smaller image.',
+    title: "This image exceeds the tool's supported dimensions.",
+    message: 'Resize it to fewer pixels, then try again.',
   },
   [ERROR_CODES.DECODE_FAILED]: {
     title: "We couldn't read this image.",
@@ -55,7 +55,7 @@ export const VALIDATION_MESSAGES = Object.freeze({
   },
   [ERROR_CODES.UNSUPPORTED_BROWSER]: {
     title: "Your browser doesn't support this output format.",
-    message: 'Use JPEG, PNG, WebP, or another modern browser.',
+    message: 'Choose another available output format, or use a different modern browser.',
   },
 });
 

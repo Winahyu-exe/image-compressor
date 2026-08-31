@@ -8,6 +8,10 @@ const compressorController = readFileSync(
   new URL('../../src/tools/image-compressor/index.js', import.meta.url),
   'utf8',
 );
+const compressorMarkup = readFileSync(
+  new URL('../../image-compressor.html', import.meta.url),
+  'utf8',
+);
 
 test('presents reduced PNG results as successful savings', () => {
   const presentation = getResultPresentation({
@@ -85,4 +89,29 @@ test('disables ineffective quality controls for lossless PNG output', () => {
   assert.match(compressorController, /qualityPresetGroup\.disabled = isPngOutput/);
   assert.match(compressorController, /qualityInput\.disabled = isPngOutput/);
   assert.match(compressorController, /Not used for lossless PNG/);
+});
+
+test('presents the sanitized downloadable filename in the result summary', () => {
+  assert.match(
+    compressorController,
+    /resultName\.textContent = result\.downloadName \|\| 'Not available'/,
+  );
+  assert.doesNotMatch(compressorController, /resultName\.textContent = result\.originalName/);
+});
+
+test('uses format recovery copy after a processing-time encoder failure', () => {
+  assert.match(compressorController, /markOutputFormatUnavailable\(/);
+  assert.match(compressorController, /'Change output format' : 'Try again'/);
+  assert.match(compressorController, /focusStateTarget\(outputFormat\)/);
+});
+
+test('stop waiting invalidates stale work without claiming browser processing was aborted', () => {
+  assert.match(compressorMarkup, />\s*Stop waiting\s*</);
+  assert.match(compressorMarkup, /work\s+already started may finish in the background/);
+  assert.doesNotMatch(compressorMarkup, />\s*Cancel\s*</);
+  assert.match(compressorController, /currentProcessId \+= 1/);
+  assert.match(
+    compressorController,
+    /const result = await processImage[\s\S]*if \(currentProcessId !== processId\) \{\s*return;/,
+  );
 });

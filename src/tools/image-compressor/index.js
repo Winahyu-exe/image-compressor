@@ -7,6 +7,7 @@ import { createResourceManager } from '../../shared/resource-manager.js';
 import {
   applyOutputFormatAvailability,
   getOutputFormatAvailability,
+  markOutputFormatUnavailable,
 } from './browser-capabilities.js';
 import { selectSingleFile } from './file-selection.js';
 import { clearPreviewSource, setPreviewSource } from './preview-lifecycle.js';
@@ -46,6 +47,7 @@ const resultChange = document.querySelector('[data-result-change]');
 const resultFormat = document.querySelector('[data-result-format]');
 const resultDimensions = document.querySelector('[data-result-dimensions]');
 const downloadLink = document.querySelector('[data-download]');
+const retryButtons = Array.from(document.querySelectorAll('[data-retry]'));
 const presetHelp = {
   balanced: document.querySelector('[data-preset-help="balanced"]'),
   better: document.querySelector('[data-preset-help="better"]'),
@@ -82,6 +84,7 @@ let selectedFile = null;
 let selectedMetadata = null;
 let currentValidationId = 0;
 let currentProcessId = 0;
+let currentErrorCode = null;
 const resources = createResourceManager();
 const encoderAvailability = getOutputFormatAvailability();
 
@@ -157,6 +160,7 @@ function clearResult() {
 
 function presentValidationError(code, details) {
   const validationMessage = getValidationMessage(code, details);
+  currentErrorCode = code;
 
   if (errorTitle) {
     errorTitle.textContent = validationMessage.title;
@@ -165,6 +169,11 @@ function presentValidationError(code, details) {
   if (errorMessage) {
     errorMessage.textContent = validationMessage.message;
   }
+
+  retryButtons.forEach((button) => {
+    button.textContent =
+      code === ERROR_CODES.UNSUPPORTED_BROWSER ? 'Change output format' : 'Try again';
+  });
 
   setState('error');
   focusStateTarget(errorTitle);
@@ -234,6 +243,7 @@ function resetTool() {
   clearResult();
   selectedFile = null;
   selectedMetadata = null;
+  currentErrorCode = null;
 
   if (fileInput) {
     fileInput.value = '';
@@ -394,7 +404,7 @@ function presentResult(result) {
   }
 
   if (resultName) {
-    resultName.textContent = result.originalName || 'Unnamed image';
+    resultName.textContent = result.downloadName || 'Not available';
   }
 
   if (resultOriginalSize) {
@@ -432,12 +442,14 @@ async function compressSelectedImage() {
   setState('processing');
   focusStateTarget(processingHeading);
 
+  const settings = getCompressionSettings();
+
   const result = await processImage(
     {
       file: selectedFile,
       metadata: selectedMetadata,
     },
-    getCompressionSettings(),
+    settings,
   );
 
   if (currentProcessId !== processId) {
@@ -446,6 +458,17 @@ async function compressSelectedImage() {
 
   if (!result.ok) {
     clearResult();
+
+    if (result.code === ERROR_CODES.UNSUPPORTED_BROWSER) {
+      markOutputFormatUnavailable(
+        outputFormat,
+        encoderAvailability,
+        settings.outputFormat,
+        selectedMetadata.mimeType,
+      );
+      updateFormatGuidance();
+    }
+
     presentValidationError(result.code, result.details);
     return;
   }
@@ -534,13 +557,19 @@ document
     button.addEventListener('click', resetTool);
   });
 
-document.querySelectorAll('[data-retry]').forEach((button) => {
+retryButtons.forEach((button) => {
   button.addEventListener('click', () => {
     if (selectedFile) {
       setState('ready');
+
+      if (currentErrorCode === ERROR_CODES.UNSUPPORTED_BROWSER) {
+        focusStateTarget(outputFormat);
+      }
     } else {
       setState('idle');
     }
+
+    currentErrorCode = null;
   });
 });
 

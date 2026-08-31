@@ -57,3 +57,21 @@ export function applyOutputFormatAvailability(select, availability, originalMime
     select.value = fallback?.value || 'original';
   }
 }
+
+export function markOutputFormatUnavailable(
+  select,
+  availability,
+  requestedOutput,
+  originalMimeType = null,
+) {
+  const unavailableMimeType =
+    requestedOutput === 'original' ? originalMimeType : requestedOutput;
+
+  if (unavailableMimeType && unavailableMimeType in availability) {
+    availability[unavailableMimeType] = false;
+  }
+
+  applyOutputFormatAvailability(select, availability, originalMimeType);
+
+  return unavailableMimeType;
+}
