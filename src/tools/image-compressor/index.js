@@ -10,7 +10,7 @@ import {
 } from './browser-capabilities.js';
 import { selectSingleFile } from './file-selection.js';
 import { clearPreviewSource, setPreviewSource } from './preview-lifecycle.js';
-import { processImage } from './process-image.js';
+import { processImage, QUALITY_PRESETS } from './process-image.js';
 import { validateImage } from './validate-image.js';
 import { getResultPresentation } from './view.js';
 
@@ -29,7 +29,13 @@ const originalPreview = document.querySelector('[data-original-preview]');
 const errorTitle = document.querySelector('[data-error-title]');
 const errorMessage = document.querySelector('[data-error-message]');
 const outputFormat = document.querySelector('[data-output-format]');
-const qualityInput = document.querySelector('input[type="range"]');
+const qualityInput = document.querySelector('[data-quality-input]');
+const qualityValue = document.querySelector('[data-quality-value]');
+const qualityPresetGroup = document.querySelector('[data-quality-presets]');
+const qualityPresetInputs = Array.from(
+  document.querySelectorAll('input[name="quality-preset"]'),
+);
+const processingHeading = document.querySelector('[data-processing-heading]');
 const resultPreview = document.querySelector('[data-result-preview]');
 const resultHeading = document.querySelector('[data-result-heading]');
 const resultNote = document.querySelector('[data-result-note]');
@@ -46,6 +52,13 @@ const presetHelp = {
   smaller: document.querySelector('[data-preset-help="smaller"]'),
 };
 const qualityHelp = document.querySelector('[data-quality-help]');
+
+const DEFAULT_QUALITY_PRESET = 'balanced';
+const qualityPresetLabels = {
+  balanced: 'Balanced',
+  better: 'Better quality',
+  smaller: 'Smaller',
+};
 
 const stateLabels = {
   idle: 'Idle',
@@ -72,14 +85,14 @@ let currentProcessId = 0;
 const resources = createResourceManager();
 const encoderAvailability = getOutputFormatAvailability();
 
-function setState(nextState) {
+function setState(nextState, statusMessage = stateStatus[nextState]) {
   if (!root || !statusLine || !stateBadge) {
     return;
   }
 
   root.dataset.state = nextState;
   stateBadge.textContent = stateLabels[nextState];
-  statusLine.textContent = stateStatus[nextState];
+  statusLine.textContent = statusMessage;
 
   document.querySelectorAll('[data-view]').forEach((view) => {
     view.hidden = view.dataset.view !== nextState;
@@ -88,6 +101,10 @@ function setState(nextState) {
   if (compressButton) {
     compressButton.disabled = nextState !== 'ready';
   }
+}
+
+function focusStateTarget(target) {
+  target?.focus?.();
 }
 
 function clearFileFacts() {
@@ -150,6 +167,7 @@ function presentValidationError(code, details) {
   }
 
   setState('error');
+  focusStateTarget(errorTitle);
 }
 
 function presentOriginalPreview(file) {
@@ -221,13 +239,17 @@ function resetTool() {
     fileInput.value = '';
   }
 
+  resetQualityControls();
   clearFileFacts();
+  updateFormatGuidance();
   setState('idle');
+  focusStateTarget(chooseFileButton);
 }
 
 function getCompressionSettings() {
-  const preset = document.querySelector('input[name="quality-preset"]:checked')?.value || 'balanced';
-  const quality = qualityInput?.dataset.customQuality === 'true' ? Number(qualityInput.value) / 100 : undefined;
+  const selectedPreset = qualityPresetInputs.find((input) => input.checked)?.value;
+  const preset = selectedPreset || DEFAULT_QUALITY_PRESET;
+  const quality = selectedPreset ? undefined : Number(qualityInput?.value) / 100;
 
   return {
     outputFormat: outputFormat?.value || 'original',
@@ -248,6 +270,51 @@ function getResolvedOutputFormat() {
   }
 
   return requestedOutput;
+}
+
+function updateQualityModePresentation(isPngOutput = false) {
+  if (!qualityValue || !qualityInput) {
+    return;
+  }
+
+  if (isPngOutput) {
+    qualityValue.textContent = 'Not used for lossless PNG';
+    return;
+  }
+
+  const selectedPreset = qualityPresetInputs.find((input) => input.checked)?.value;
+
+  if (selectedPreset) {
+    const presetPercent = Math.round(QUALITY_PRESETS[selectedPreset] * 100);
+    qualityValue.textContent = `Preset: ${qualityPresetLabels[selectedPreset]} (${presetPercent}%)`;
+    return;
+  }
+
+  qualityValue.textContent = `Custom: ${qualityInput.value}%`;
+}
+
+function updateQualityControlsAvailability(isPngOutput) {
+  if (qualityPresetGroup) {
+    qualityPresetGroup.disabled = isPngOutput;
+  }
+
+  if (qualityInput) {
+    qualityInput.disabled = isPngOutput;
+  }
+
+  updateQualityModePresentation(isPngOutput);
+}
+
+function resetQualityControls() {
+  qualityPresetInputs.forEach((input) => {
+    input.checked = input.value === DEFAULT_QUALITY_PRESET;
+  });
+
+  if (qualityInput) {
+    qualityInput.value = String(Math.round(QUALITY_PRESETS[DEFAULT_QUALITY_PRESET] * 100));
+  }
+
+  updateQualityModePresentation();
 }
 
 function updateFormatGuidance() {
@@ -276,6 +343,8 @@ function updateFormatGuidance() {
       ? 'For PNG, this app keeps the image lossless. The quality slider does not directly control PNG file size.'
       : 'Quality affects JPEG and WebP output. Lower values usually create smaller files.';
   }
+
+  updateQualityControlsAvailability(isPngOutput);
 }
 
 function updateOutputFormatAvailability() {
@@ -347,7 +416,9 @@ function presentResult(result) {
     resultDimensions.textContent = `${result.width} x ${result.height}`;
   }
 
-  setState('success');
+  const presentation = getResultPresentation(result);
+  setState('success', `Compression complete. ${presentation.change}.`);
+  focusStateTarget(resultHeading);
 }
 
 async function compressSelectedImage() {
@@ -359,6 +430,7 @@ async function compressSelectedImage() {
   currentProcessId = processId;
   clearResult();
   setState('processing');
+  focusStateTarget(processingHeading);
 
   const result = await processImage(
     {
@@ -434,9 +506,23 @@ if (compressButton) {
 
 if (qualityInput) {
   qualityInput.addEventListener('input', () => {
-    qualityInput.dataset.customQuality = 'true';
+    qualityPresetInputs.forEach((input) => {
+      input.checked = false;
+    });
+    updateQualityModePresentation();
   });
 }
+
+qualityPresetInputs.forEach((input) => {
+  input.addEventListener('change', () => {
+    if (!input.checked || !qualityInput) {
+      return;
+    }
+
+    qualityInput.value = String(Math.round(QUALITY_PRESETS[input.value] * 100));
+    updateQualityModePresentation();
+  });
+});
 
 if (outputFormat) {
   outputFormat.addEventListener('change', updateFormatGuidance);

@@ -89,6 +89,7 @@
               id="image-input"
               data-file-input
               type="file"
+              tabindex="-1"
               accept="image/jpeg,image/png,image/webp"
             />
             <div class="upload-zone__content">
@@ -96,7 +97,12 @@
               <p id="upload-help" class="upload-zone__help">
                 JPEG, PNG or WebP &middot; up to 20 MB &middot; processed on this device
               </p>
-              <button class="button button--primary" type="button" data-choose-file>
+              <button
+                class="button button--primary"
+                type="button"
+                data-choose-file
+                aria-describedby="upload-help privacy-note"
+              >
                 Choose image
               </button>
             </div>
@@ -138,7 +144,7 @@
 
             <section class="settings-panel" aria-labelledby="settings-heading">
               <h3 id="settings-heading">Compression settings</h3>
-              <fieldset class="preset-group">
+              <fieldset class="preset-group" data-quality-presets>
                 <legend>Quality preset</legend>
                 <label>
                   <input type="radio" name="quality-preset" value="smaller" />
@@ -169,8 +175,15 @@
                   </select>
                 </label>
                 <label class="field">
-                  <span>Quality</span>
+                  <span class="field__label">
+                    Quality
+                    <output for="quality-input" data-quality-value>
+                      Preset: Balanced (78%)
+                    </output>
+                  </span>
                   <input
+                    id="quality-input"
+                    data-quality-input
                     type="range"
                     min="40"
                     max="95"
@@ -195,7 +208,9 @@
           </div>
 
           <div class="state-region" data-view="processing" hidden>
-            <p class="state-region__title">Compressing image...</p>
+            <h3 class="state-region__title" data-processing-heading tabindex="-1">
+              Compressing image...
+            </h3>
             <p>Processing this image in your browser. No upload is used.</p>
             <button class="button button--secondary" type="button" data-reset-processing>
               Cancel
@@ -203,7 +218,7 @@
           </div>
 
           <section class="result-panel" aria-labelledby="result-heading" data-view="success" hidden>
-            <h3 id="result-heading" data-result-heading>Result ready</h3>
+            <h3 id="result-heading" data-result-heading tabindex="-1">Result ready</h3>
             <p class="result-note" data-result-note hidden></p>
             <img
               class="result-preview"
@@ -248,7 +263,7 @@
           </section>
 
           <section class="error-panel" role="alert" data-view="error" hidden>
-            <h3 data-error-title>We couldn't read this image.</h3>
+            <h3 data-error-title tabindex="-1">We couldn't read this image.</h3>
             <p data-error-message>
               Try another copy of the image or save it as JPEG, PNG, or WebP.
             </p>

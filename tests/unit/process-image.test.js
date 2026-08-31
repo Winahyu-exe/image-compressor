@@ -121,12 +121,13 @@ test('compresses JPEG with browser-style Blob output and metadata', async () => 
 });
 
 test('handles PNG as lossless output without JPEG-style quality', async () => {
-  const { apis } = createProcessingApis();
+  const { apis, calls } = createProcessingApis();
   const result = await processImage(createValidatedInput('png'), { preset: 'smaller' }, apis);
 
   assert.equal(result.ok, true);
   assert.equal(result.result.outputMimeType, 'image/png');
   assert.equal(result.result.quality, null);
+  assert.equal(calls.lastQuality, undefined);
   assert.equal(['larger', 'reduced', 'unchanged'].includes(result.result.resultStatus), true);
 });
 
@@ -196,6 +197,28 @@ test('applies documented preset qualities', async () => {
 
   assert.equal(smaller.calls.lastQuality, QUALITY_PRESETS.smaller);
   assert.equal(better.calls.lastQuality, QUALITY_PRESETS.better);
+});
+
+test('keeps the documented preset values unchanged', () => {
+  assert.deepEqual(QUALITY_PRESETS, {
+    balanced: 0.78,
+    better: 0.88,
+    smaller: 0.6,
+  });
+});
+
+test('uses an explicit custom slider quality instead of the selected preset', async () => {
+  const { apis, calls } = createProcessingApis();
+
+  const result = await processImage(
+    createValidatedInput('jpeg'),
+    { preset: 'smaller', quality: 0.73 },
+    apis,
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.result.quality, 0.73);
+  assert.equal(calls.lastQuality, 0.73);
 });
 
 test('supports explicit output generation metadata', async () => {

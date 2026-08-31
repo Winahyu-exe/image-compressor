@@ -271,6 +271,10 @@ dd {
   color: var(--color-muted);
 }
 
+.preset-group:disabled {
+  opacity: 0.65;
+}
+
 .advanced-settings {
   margin-top: var(--space-6);
 }
@@ -283,6 +287,18 @@ dd {
 
 .field span {
   font-weight: 700;
+}
+
+.field .field__label {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.field output {
+  color: var(--color-muted);
+  font-weight: 400;
 }
 
 .field select,
