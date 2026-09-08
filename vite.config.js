@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/image-compressor/',
+  base: '/',
   plugins: [
     {
       name: 'emit-root-index',
