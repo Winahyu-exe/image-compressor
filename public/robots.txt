@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://winahyu-exe.github.io/image-compressor/sitemap.xml
+Sitemap: https://image-compressor.my.id/sitemap.xml
